@@ -107,7 +107,7 @@ tasks.curseforge.enabled = release && project.hasProperty('curse_api')
 
 curseforge {
     if (project.hasProperty('curse_api')) {
-        apiKey = "${curse_api}"
+        apiKey = project.curse_api
     }
     project {
         id = '293536'

@@ -8,12 +8,14 @@ buildscript {
     }
     dependencies {
         classpath "net.minecraftforge.gradle:ForgeGradle:2.3-SNAPSHOT"
+        classpath 'com.selesse:gradle-git-changelog:0.2.+'
     }
 }
 plugins {
     id "com.github.hierynomus.license" version "0.14.0"
 }
 apply plugin: "net.minecraftforge.gradle.forge"
+apply plugin: 'com.selesse.git.changelog'
 
 String b = ""
 if (project.hasProperty("teamcity")) {
@@ -75,5 +77,25 @@ license {
     ignoreFailures = true
     mapping {
         java='SLASHSTAR_STYLE'
+    }
+}
+
+changelog {
+    title = "CHANGELOG.md"
+    outputDirectory = file("$projectDir")
+    since = 'beginning'
+    commitFormat = '%s (%an)'
+    markdown {
+        commitFormat = '* %s (%an)'
+    }
+    includeLines = {
+        !it.contains("Merge")
+    }
+    processLines = {
+        String input = it as String
+        if (input.contains('[ci skip] ')) {
+            input = input.minus('[ci skip] ')
+        }
+        input
     }
 }

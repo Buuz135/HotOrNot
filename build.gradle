@@ -19,6 +19,7 @@ plugins {
 }
 apply plugin: "net.minecraftforge.gradle.forge"
 apply plugin: 'com.selesse.git.changelog'
+apply plugin: 'java'
 
 String b = ""
 if (project.hasProperty("teamcity")) {
@@ -102,8 +103,8 @@ changelog {
         input
     }
 }
-def release = System.getenv("RELEASE") != null && !System.getenv("RELEASE").equalsIgnoreCase("false")
-tasks.curseforge.enabled = release && project.hasProperty('curse_api')
+
+tasks.curseforge.enabled =  project.hasProperty('curse_api')
 
 curseforge {
     if (project.hasProperty('curse_api')) {

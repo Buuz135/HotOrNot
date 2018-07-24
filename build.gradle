@@ -15,7 +15,6 @@ buildscript {
 }
 plugins {
     id "com.github.hierynomus.license" version "0.14.0"
-    id 'com.selesse.git.changelog' version '0.2.+'
     id "com.matthewprenger.cursegradle" version "1.0.9"
 }
 apply plugin: "net.minecraftforge.gradle.forge"

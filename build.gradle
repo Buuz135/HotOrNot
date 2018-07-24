@@ -15,7 +15,7 @@ buildscript {
 }
 plugins {
     id "com.github.hierynomus.license" version "0.14.0"
-    id "com.matthewprenger.cursegradle" version "1.0.9"
+    id "com.matthewprenger.cursegradle" version "1.0.10"
 }
 apply plugin: "net.minecraftforge.gradle.forge"
 apply plugin: 'com.selesse.git.changelog'
@@ -87,7 +87,7 @@ license {
 changelog {
     title = "CHANGELOG.md"
     outputDirectory = file("$projectDir")
-    since = 'beginning'
+    since = 'last_tag'
     commitFormat = '%s (%an)'
     markdown {
         commitFormat = '* %s (%an)'

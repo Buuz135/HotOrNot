@@ -9,6 +9,7 @@ buildscript {
     dependencies {
         classpath "net.minecraftforge.gradle:ForgeGradle:2.3-SNAPSHOT"
         classpath 'com.selesse:gradle-git-changelog:0.2.+'
+        classpath "gradle.plugin.com.matthewprenger:CurseGradle:1.0.10"
     }
 }
 plugins {
@@ -16,6 +17,7 @@ plugins {
 }
 apply plugin: "net.minecraftforge.gradle.forge"
 apply plugin: 'com.selesse.git.changelog'
+apply plugin: 'net.minecraftforge.gradle.forge'
 
 String b = ""
 if (project.hasProperty("teamcity")) {
@@ -99,3 +101,22 @@ changelog {
         input
     }
 }
+def release = System.getenv("RELEASE") != null && !System.getenv("RELEASE").equalsIgnoreCase("false")
+tasks.curseforge.enabled = release && project.hasProperty('curse_api')
+curseforge {
+    if (project.hasProperty('curse_api')) {
+        apiKey = project.curse_api
+    }
+    project {
+        id = '293536'
+        changelog = file('CHANGELOG.md')
+        changelogType = 'markdown'
+        releaseType = 'beta'
+    }
+}
+
+//task("uploadCurse"){
+//    if (project.hasProperty('curse_api')){
+//        curseforge
+//    }
+//}

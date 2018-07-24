@@ -105,7 +105,7 @@ def release = System.getenv("RELEASE") != null && !System.getenv("RELEASE").equa
 tasks.curseforge.enabled = release && project.hasProperty('curse_api')
 curseforge {
     if (project.hasProperty('curse_api')) {
-        apiKey = project.getAt('curse_api')
+        apiKey = "${curse_api}"
     }
     project {
         id = '293536'
@@ -115,8 +115,3 @@ curseforge {
     }
 }
 
-//task("uploadCurse"){
-//    if (project.hasProperty('curse_api')){
-//        curseforge
-//    }
-//}

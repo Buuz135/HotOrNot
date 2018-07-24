@@ -14,10 +14,10 @@ buildscript {
 }
 plugins {
     id "com.github.hierynomus.license" version "0.14.0"
+    id "se.bjurr.gitchangelog.git-changelog-gradle-plugin" version "1.32"
+    id "com.matthewprenger.cursegradle" version "1.0.9"
 }
 apply plugin: "net.minecraftforge.gradle.forge"
-apply plugin: 'com.selesse.git.changelog'
-apply plugin: 'net.minecraftforge.gradle.forge'
 
 String b = ""
 if (project.hasProperty("teamcity")) {
@@ -103,6 +103,7 @@ changelog {
 }
 def release = System.getenv("RELEASE") != null && !System.getenv("RELEASE").equalsIgnoreCase("false")
 tasks.curseforge.enabled = release && project.hasProperty('curse_api')
+
 curseforge {
     if (project.hasProperty('curse_api')) {
         apiKey = "${curse_api}"

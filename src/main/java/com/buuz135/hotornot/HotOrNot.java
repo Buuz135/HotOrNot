@@ -36,6 +36,8 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.TickEvent;
 import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.items.CapabilityItemHandler;
+import net.minecraftforge.items.IItemHandler;
 
 @Mod(
         modid = HotOrNot.MOD_ID,
@@ -55,13 +57,16 @@ public class HotOrNot {
         public static void onTick(TickEvent.ServerTickEvent event) {
             if (event.phase == TickEvent.Phase.START) {
                 for (EntityPlayerMP entityPlayerMP : FMLCommonHandler.instance().getMinecraftServerInstance().getPlayerList().getPlayers()) {
-                    if (!entityPlayerMP.isBurning() && !entityPlayerMP.isCreative()) {
-                        for (ItemStack stack : entityPlayerMP.inventory.mainInventory) {
+                    if (!entityPlayerMP.isBurning() && !entityPlayerMP.isCreative() && entityPlayerMP.hasCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY, null)) {
+                        IItemHandler handler = entityPlayerMP.getCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY, null);
+                        for (int i = 0; i < handler.getSlots(); i++) {
+                            ItemStack stack = handler.getStackInSlot(i);
                             if (!stack.isEmpty() && stack.hasCapability(CapabilityFluidHandler.FLUID_HANDLER_ITEM_CAPABILITY, null)) {
                                 IFluidHandlerItem fluidHandlerItem = stack.getCapability(CapabilityFluidHandler.FLUID_HANDLER_ITEM_CAPABILITY, null);
                                 FluidStack fluidStack = fluidHandlerItem.drain(1000, false);
                                 if (fluidStack != null && fluidStack.getFluid().getTemperature(fluidStack) >= HotConfig.HOT) {
                                     entityPlayerMP.setFire(1);
+                                    break;
                                 }
                             }
                         }

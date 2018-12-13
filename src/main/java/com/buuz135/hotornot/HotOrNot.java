@@ -22,7 +22,9 @@
 package com.buuz135.hotornot;
 
 import net.minecraft.entity.player.EntityPlayerMP;
+import net.minecraft.init.MobEffects;
 import net.minecraft.item.ItemStack;
+import net.minecraft.potion.PotionEffect;
 import net.minecraft.util.text.TextComponentTranslation;
 import net.minecraft.util.text.TextFormatting;
 import net.minecraftforge.common.config.Config;
@@ -57,6 +59,10 @@ public class HotOrNot {
 
     public enum FluidEffect {
         HOT(fluidStack -> fluidStack.getFluid().getTemperature(fluidStack) >= HotConfig.HOT, entityPlayerMP -> entityPlayerMP.setFire(1), TextFormatting.RED, "tooltip.hotornot.toohot"),
+        COLD(fluidStack -> fluidStack.getFluid().getTemperature(fluidStack) <= HotConfig.COLD, entityPlayerMP -> {
+            entityPlayerMP.addPotionEffect(new PotionEffect(MobEffects.SLOWNESS, 2, 1));
+            entityPlayerMP.addPotionEffect(new PotionEffect(MobEffects.WEAKNESS, 2, 1));
+        }, TextFormatting.AQUA, "tooltip.hotornot.toocold")
         ;
 
         private final Predicate<FluidStack> isValid;
@@ -113,8 +119,11 @@ public class HotOrNot {
     @Config(modid = MOD_ID)
     public static class HotConfig {
 
-        @Config.Comment("How hot a fluid should be to start burning the player")
+        @Config.Comment("How hot a fluid should be to start burning the player (in kelvin)")
         public static int HOT = 1300;
+
+        @Config.Comment("How cold a fluid should be to start adding effects the player (in kelvin)")
+        public static int COLD = 273;
 
         @Config.Comment("If true, the items that contain hot fluid will have a tooltip that will show that they are too hot")
         public static boolean TOOLTIP = true;

@@ -85,10 +85,10 @@ license {
 }
 
 changelog {
-    title = "Industrial Foregoing"
+    title = "Hot Or Not"
     fileName = "CHANGELOG.md"
     outputDirectory = file("$projectDir")
-    since = 'last_tag'
+    since = '1.0.1'
     commitFormat = '%s (%an)'
     markdown {
         commitFormat = '* %s (%an)'

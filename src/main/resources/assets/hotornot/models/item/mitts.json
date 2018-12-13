@@ -1,0 +1,25 @@
+{
+  "parent": "hotornot:item/item",
+  "textures": {
+    "layer0": "hotornot:items/mitts"
+  },
+  "display": {
+    "firstperson_lefthand": {
+      "rotation": [
+        0,
+        90,
+        -25
+      ],
+      "translation": [
+        1.13,
+        3.2,
+        1.13
+      ],
+      "scale": [
+        0.68,
+        0.68,
+        0.68
+      ]
+    }
+  }
+}

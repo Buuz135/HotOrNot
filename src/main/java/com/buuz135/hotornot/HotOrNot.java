@@ -62,7 +62,8 @@ public class HotOrNot {
         COLD(fluidStack -> fluidStack.getFluid().getTemperature(fluidStack) <= HotConfig.COLD, entityPlayerMP -> {
             entityPlayerMP.addPotionEffect(new PotionEffect(MobEffects.SLOWNESS, 2, 1));
             entityPlayerMP.addPotionEffect(new PotionEffect(MobEffects.WEAKNESS, 2, 1));
-        }, TextFormatting.AQUA, "tooltip.hotornot.toocold")
+        }, TextFormatting.AQUA, "tooltip.hotornot.toocold"),
+        GAS(fluidStack -> fluidStack.getFluid().isGaseous(fluidStack) && HotConfig.GASEOUS, entityPlayerMP -> entityPlayerMP.addPotionEffect(new PotionEffect(MobEffects.LEVITATION, 2, 1)), TextFormatting.YELLOW, "tooltip.hotornot.toolight")
         ;
 
         private final Predicate<FluidStack> isValid;
@@ -124,6 +125,9 @@ public class HotOrNot {
 
         @Config.Comment("How cold a fluid should be to start adding effects the player (in kelvin)")
         public static int COLD = 273;
+
+        @Config.Comment("If true gaseous effects for the fluids will be enabled")
+        public static boolean GASEOUS = true;
 
         @Config.Comment("If true, the items that contain hot fluid will have a tooltip that will show that they are too hot")
         public static boolean TOOLTIP = true;

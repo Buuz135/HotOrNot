@@ -21,14 +21,18 @@
  */
 package com.buuz135.hotornot;
 
+import com.buuz135.hotornot.proxy.CommonProxy;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.init.MobEffects;
+import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.potion.PotionEffect;
 import net.minecraft.util.text.TextComponentTranslation;
 import net.minecraft.util.text.TextFormatting;
+import net.minecraftforge.client.event.ModelRegistryEvent;
 import net.minecraftforge.common.config.Config;
 import net.minecraftforge.common.config.ConfigManager;
+import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.event.entity.player.ItemTooltipEvent;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
@@ -36,9 +40,14 @@ import net.minecraftforge.fluids.capability.IFluidHandlerItem;
 import net.minecraftforge.fml.client.event.ConfigChangedEvent;
 import net.minecraftforge.fml.common.FMLCommonHandler;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.common.SidedProxy;
+import net.minecraftforge.fml.common.event.FMLInitializationEvent;
+import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
+import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.TickEvent;
 import net.minecraftforge.fml.relauncher.Side;
+import net.minecraftforge.fml.relauncher.SideOnly;
 import net.minecraftforge.items.CapabilityItemHandler;
 import net.minecraftforge.items.IItemHandler;
 
@@ -56,6 +65,39 @@ public class HotOrNot {
     public static final String MOD_ID = "hotornot";
     public static final String MOD_NAME = "HotOrNot";
     public static final String VERSION = "1.0";
+
+    @SidedProxy(clientSide = "com.buuz135.hotornot.proxy.ClientProxy", serverSide = "com.buuz135.hotornot.proxy.CommonProxy")
+    public static CommonProxy proxy;
+
+    @Mod.EventHandler
+    public void preInit(FMLPreInitializationEvent event) {
+        proxy.preInit(event);
+    }
+
+    @Mod.EventHandler
+    public void init(FMLInitializationEvent event) {
+        proxy.init(event);
+    }
+
+    @Mod.EventHandler
+    public void postInit(FMLPostInitializationEvent event) {
+        proxy.postInit(event);
+    }
+
+    @Mod.EventBusSubscriber
+    public static class ObjectRegistryHandler {
+
+        @SubscribeEvent
+        public static void addItems(RegistryEvent.Register<Item> event) {
+            proxy.registerItems(event);
+        }
+
+        @SubscribeEvent
+        @SideOnly(Side.CLIENT)
+        public static void modelRegistryEvent(ModelRegistryEvent event) {
+            proxy.modelRegistryEvent(event);
+        }
+    }
 
     public enum FluidEffect {
         HOT(fluidStack -> fluidStack.getFluid().getTemperature(fluidStack) >= HotConfig.HOT, entityPlayerMP -> entityPlayerMP.setFire(1), TextFormatting.RED, "tooltip.hotornot.toohot"),
@@ -106,7 +148,12 @@ public class HotOrNot {
                                 if (fluidStack != null) {
                                     FluidEffect effect = FluidEffect.getFirstEffect(fluidStack);
                                     if (effect != null) {
-                                        effect.interactPlayer.accept(entityPlayerMP);
+                                        ItemStack offHand = entityPlayerMP.getHeldItemOffhand();
+                                        if (offHand.getItem().equals(CommonProxy.MITTS)) {
+                                            offHand.damageItem(1, entityPlayerMP);
+                                        } else {
+                                            effect.interactPlayer.accept(entityPlayerMP);
+                                        }
                                     }
                                 }
                             }
@@ -131,6 +178,9 @@ public class HotOrNot {
 
         @Config.Comment("If true, the items that contain hot fluid will have a tooltip that will show that they are too hot")
         public static boolean TOOLTIP = true;
+
+        @Config.Comment("Max durability of the mitts")
+        public static int MITTS_DURABILITY = 20 * 60 * 10;
 
         @Mod.EventBusSubscriber(modid = MOD_ID)
         private static class EventHandler {

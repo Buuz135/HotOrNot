@@ -51,7 +51,6 @@ import net.minecraftforge.fml.relauncher.SideOnly;
 import net.minecraftforge.items.CapabilityItemHandler;
 import net.minecraftforge.items.IItemHandler;
 
-import javax.annotation.Nullable;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
@@ -120,15 +119,6 @@ public class HotOrNot {
             this.tooltip = tooltip;
         }
 
-        @Nullable
-        public static FluidEffect getFirstEffect(FluidStack fluidStack) {
-            for (FluidEffect value : FluidEffect.values()) {
-                if (value.isValid.test(fluidStack)) {
-                    return value;
-                }
-            }
-            return null;
-        }
     }
 
     @Mod.EventBusSubscriber
@@ -146,13 +136,14 @@ public class HotOrNot {
                                 IFluidHandlerItem fluidHandlerItem = stack.getCapability(CapabilityFluidHandler.FLUID_HANDLER_ITEM_CAPABILITY, null);
                                 FluidStack fluidStack = fluidHandlerItem.drain(1000, false);
                                 if (fluidStack != null) {
-                                    FluidEffect effect = FluidEffect.getFirstEffect(fluidStack);
-                                    if (effect != null) {
-                                        ItemStack offHand = entityPlayerMP.getHeldItemOffhand();
-                                        if (offHand.getItem().equals(CommonProxy.MITTS)) {
-                                            offHand.damageItem(1, entityPlayerMP);
-                                        } else {
-                                            effect.interactPlayer.accept(entityPlayerMP);
+                                    for (FluidEffect effect : FluidEffect.values()) {
+                                        if (effect.isValid.test(fluidStack)) {
+                                            ItemStack offHand = entityPlayerMP.getHeldItemOffhand();
+                                            if (offHand.getItem().equals(CommonProxy.MITTS)) {
+                                                offHand.damageItem(1, entityPlayerMP);
+                                            } else {
+                                                effect.interactPlayer.accept(entityPlayerMP);
+                                            }
                                         }
                                     }
                                 }
@@ -203,9 +194,10 @@ public class HotOrNot {
                 IFluidHandlerItem fluidHandlerItem = stack.getCapability(CapabilityFluidHandler.FLUID_HANDLER_ITEM_CAPABILITY, null);
                 FluidStack fluidStack = fluidHandlerItem.drain(1000, false);
                 if (fluidStack != null) {
-                    FluidEffect effect = FluidEffect.getFirstEffect(fluidStack);
-                    if (effect != null)
-                        event.getToolTip().add(effect.color + new TextComponentTranslation(effect.tooltip).getUnformattedText());
+                    for (FluidEffect effect : FluidEffect.values()) {
+                        if (effect.isValid.test(fluidStack))
+                            event.getToolTip().add(effect.color + new TextComponentTranslation(effect.tooltip).getUnformattedText());
+                    }
                 }
             }
         }

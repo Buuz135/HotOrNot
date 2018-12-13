@@ -23,6 +23,7 @@ package com.buuz135.hotornot;
 
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.item.ItemStack;
+import net.minecraft.util.text.TextComponentTranslation;
 import net.minecraft.util.text.TextFormatting;
 import net.minecraftforge.common.config.Config;
 import net.minecraftforge.common.config.ConfigManager;
@@ -39,6 +40,10 @@ import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.items.CapabilityItemHandler;
 import net.minecraftforge.items.IItemHandler;
 
+import javax.annotation.Nullable;
+import java.util.function.Consumer;
+import java.util.function.Predicate;
+
 @Mod(
         modid = HotOrNot.MOD_ID,
         name = HotOrNot.MOD_NAME,
@@ -49,6 +54,33 @@ public class HotOrNot {
     public static final String MOD_ID = "hotornot";
     public static final String MOD_NAME = "HotOrNot";
     public static final String VERSION = "1.0";
+
+    public enum FluidEffect {
+        HOT(fluidStack -> fluidStack.getFluid().getTemperature(fluidStack) >= HotConfig.HOT, entityPlayerMP -> entityPlayerMP.setFire(1), TextFormatting.RED, "tooltip.hotornot.toohot"),
+        ;
+
+        private final Predicate<FluidStack> isValid;
+        private final Consumer<EntityPlayerMP> interactPlayer;
+        private final TextFormatting color;
+        private final String tooltip;
+
+        FluidEffect(Predicate<FluidStack> isValid, Consumer<EntityPlayerMP> interactPlayer, TextFormatting color, String tooltip) {
+            this.isValid = isValid;
+            this.interactPlayer = interactPlayer;
+            this.color = color;
+            this.tooltip = tooltip;
+        }
+
+        @Nullable
+        public static FluidEffect getFirstEffect(FluidStack fluidStack) {
+            for (FluidEffect value : FluidEffect.values()) {
+                if (value.isValid.test(fluidStack)) {
+                    return value;
+                }
+            }
+            return null;
+        }
+    }
 
     @Mod.EventBusSubscriber
     public static class ServerTick {
@@ -64,29 +96,15 @@ public class HotOrNot {
                             if (!stack.isEmpty() && stack.hasCapability(CapabilityFluidHandler.FLUID_HANDLER_ITEM_CAPABILITY, null)) {
                                 IFluidHandlerItem fluidHandlerItem = stack.getCapability(CapabilityFluidHandler.FLUID_HANDLER_ITEM_CAPABILITY, null);
                                 FluidStack fluidStack = fluidHandlerItem.drain(1000, false);
-                                if (fluidStack != null && fluidStack.getFluid().getTemperature(fluidStack) >= HotConfig.HOT) {
-                                    entityPlayerMP.setFire(1);
-                                    break;
+                                if (fluidStack != null) {
+                                    FluidEffect effect = FluidEffect.getFirstEffect(fluidStack);
+                                    if (effect != null) {
+                                        effect.interactPlayer.accept(entityPlayerMP);
+                                    }
                                 }
                             }
                         }
                     }
-                }
-            }
-        }
-    }
-
-    @Mod.EventBusSubscriber(value = Side.CLIENT)
-    public static class HotTooltip {
-
-        @SubscribeEvent
-        public static void onTooltip(ItemTooltipEvent event) {
-            ItemStack stack = event.getItemStack();
-            if (HotConfig.TOOLTIP && !stack.isEmpty() && stack.hasCapability(CapabilityFluidHandler.FLUID_HANDLER_ITEM_CAPABILITY, null)) {
-                IFluidHandlerItem fluidHandlerItem = stack.getCapability(CapabilityFluidHandler.FLUID_HANDLER_ITEM_CAPABILITY, null);
-                FluidStack fluidStack = fluidHandlerItem.drain(1000, false);
-                if (fluidStack != null && fluidStack.getFluid().getTemperature(fluidStack) >= HotConfig.HOT) {
-                    event.getToolTip().add(TextFormatting.RED + "Too hot to handle!");
                 }
             }
         }
@@ -107,6 +125,24 @@ public class HotOrNot {
             public static void onConfigChanged(final ConfigChangedEvent.OnConfigChangedEvent event) {
                 if (event.getModID().equals(MOD_ID)) {
                     ConfigManager.sync(MOD_ID, Config.Type.INSTANCE);
+                }
+            }
+        }
+    }
+
+    @Mod.EventBusSubscriber(value = Side.CLIENT)
+    public static class HotTooltip {
+
+        @SubscribeEvent
+        public static void onTooltip(ItemTooltipEvent event) {
+            ItemStack stack = event.getItemStack();
+            if (HotConfig.TOOLTIP && !stack.isEmpty() && stack.hasCapability(CapabilityFluidHandler.FLUID_HANDLER_ITEM_CAPABILITY, null)) {
+                IFluidHandlerItem fluidHandlerItem = stack.getCapability(CapabilityFluidHandler.FLUID_HANDLER_ITEM_CAPABILITY, null);
+                FluidStack fluidStack = fluidHandlerItem.drain(1000, false);
+                if (fluidStack != null) {
+                    FluidEffect effect = FluidEffect.getFirstEffect(fluidStack);
+                    if (effect != null)
+                        event.getToolTip().add(effect.color + new TextComponentTranslation(effect.tooltip).getUnformattedText());
                 }
             }
         }

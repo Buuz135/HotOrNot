@@ -63,7 +63,7 @@ public class HotOrNot {
 
     public static final String MOD_ID = "hotornot";
     public static final String MOD_NAME = "HotOrNot";
-    public static final String VERSION = "1.0";
+    public static final String VERSION = "1.1.2";
 
     @SidedProxy(clientSide = "com.buuz135.hotornot.proxy.ClientProxy", serverSide = "com.buuz135.hotornot.proxy.CommonProxy")
     public static CommonProxy proxy;
@@ -101,10 +101,10 @@ public class HotOrNot {
     public enum FluidEffect {
         HOT(fluidStack -> fluidStack.getFluid().getTemperature(fluidStack) >= HotConfig.HOT, entityPlayerMP -> entityPlayerMP.setFire(1), TextFormatting.RED, "tooltip.hotornot.toohot"),
         COLD(fluidStack -> fluidStack.getFluid().getTemperature(fluidStack) <= HotConfig.COLD, entityPlayerMP -> {
-            entityPlayerMP.addPotionEffect(new PotionEffect(MobEffects.SLOWNESS, 2, 1));
-            entityPlayerMP.addPotionEffect(new PotionEffect(MobEffects.WEAKNESS, 2, 1));
+            entityPlayerMP.addPotionEffect(new PotionEffect(MobEffects.SLOWNESS, 21, 1));
+            entityPlayerMP.addPotionEffect(new PotionEffect(MobEffects.WEAKNESS, 21, 1));
         }, TextFormatting.AQUA, "tooltip.hotornot.toocold"),
-        GAS(fluidStack -> fluidStack.getFluid().isGaseous(fluidStack) && HotConfig.GASEOUS, entityPlayerMP -> entityPlayerMP.addPotionEffect(new PotionEffect(MobEffects.LEVITATION, 2, 1)), TextFormatting.YELLOW, "tooltip.hotornot.toolight")
+        GAS(fluidStack -> fluidStack.getFluid().isGaseous(fluidStack) && HotConfig.GASEOUS, entityPlayerMP -> entityPlayerMP.addPotionEffect(new PotionEffect(MobEffects.LEVITATION, 21, 1)), TextFormatting.YELLOW, "tooltip.hotornot.toolight")
         ;
 
         private final Predicate<FluidStack> isValid;
@@ -125,7 +125,7 @@ public class HotOrNot {
     public static class ServerTick {
 
         @SubscribeEvent
-        public static void onTick(TickEvent.ServerTickEvent event) {
+        public static void onTick(TickEvent.WorldTickEvent event) {
             if (event.phase == TickEvent.Phase.START) {
                 for (EntityPlayerMP entityPlayerMP : FMLCommonHandler.instance().getMinecraftServerInstance().getPlayerList().getPlayers()) {
                     if (!entityPlayerMP.isBurning() && !entityPlayerMP.isCreative() && entityPlayerMP.hasCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY, null)) {
@@ -141,7 +141,7 @@ public class HotOrNot {
                                             ItemStack offHand = entityPlayerMP.getHeldItemOffhand();
                                             if (offHand.getItem().equals(CommonProxy.MITTS)) {
                                                 offHand.damageItem(1, entityPlayerMP);
-                                            } else {
+                                            } else if (event.world.getTotalWorldTime() % 20 == 0) {
                                                 effect.interactPlayer.accept(entityPlayerMP);
                                             }
                                         }

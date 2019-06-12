@@ -1,0 +1,7 @@
+#Korean Localization File
+tooltip.hotornot.toohot=너무 뜨겁습니다!
+tooltip.hotornot.toocold=너무 차갑습니다!
+tooltip.hotornot.toolight=너무 가볍습니다!
+
+item.hotornot.mitts.name=장갑
+item.hotornot.mitts.tooltip=다른 손에 착용하여 부정적인 효과를 없앨 수 있습니다

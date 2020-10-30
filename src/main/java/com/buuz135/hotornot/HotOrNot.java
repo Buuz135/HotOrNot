@@ -20,8 +20,8 @@ import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.TextFormatting;
 import net.minecraft.util.text.TranslationTextComponent;
-import net.minecraftforge.client.model.generators.ExistingFileHelper;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.common.data.ExistingFileHelper;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.ItemTooltipEvent;
@@ -92,64 +92,66 @@ public class HotOrNot {
 
 	@SubscribeEvent
 	public void onTick(final TickEvent.WorldTickEvent event) {
-		if (!event.world.isRemote)
-			if (event.phase == TickEvent.Phase.START) {
-				for (PlayerEntity player : event.world.getPlayers()) {
-					if (player instanceof ServerPlayerEntity) {
-						if (!player.isBurning() && !player.isCreative()
-								&& !player.isPotionActive(Effects.FIRE_RESISTANCE)) {
-							LazyOptional<IItemHandler> handler = player
-									.getCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY);
+		if (event.world.isRemote)
+			return;
+		if (event.phase == TickEvent.Phase.START) {
 
-							handler.ifPresent(h -> {
-								for (int i = 0; i < h.getSlots(); i++) {
-									ItemStack stack = h.getStackInSlot(i);
-									if (!stack.isEmpty()) {
-										ItemStack offHand = player.getHeldItemOffhand();
-										if (offHand.getItem().equals(MITTS.get())) {
-											offHand.damageItem(1, player, (consumer) -> {
-											});
-										} else {
-											LazyOptional<IFluidHandlerItem> fluidHandlerItem = stack.getCapability(
-													CapabilityFluidHandler.FLUID_HANDLER_ITEM_CAPABILITY);
+			for (PlayerEntity player : event.world.getPlayers()) {
+				if (player instanceof ServerPlayerEntity) {
+					if (!player.isBurning() && !player.isCreative()
+							&& !player.isPotionActive(Effects.FIRE_RESISTANCE)) {
+						LazyOptional<IItemHandler> handler = player
+								.getCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY);
 
-											if (fluidHandlerItem.isPresent()) {
-												if (blacklist.contains(stack.getItem()))
-													return;
-												fluidHandlerItem.ifPresent(fh -> {
-													FluidStack fluidStack = fh.drain(1000,
-															IFluidHandler.FluidAction.SIMULATE);
+						handler.ifPresent(h -> {
+							for (int i = 0; i < h.getSlots(); i++) {
+								ItemStack stack = h.getStackInSlot(i);
+								if (!stack.isEmpty()) {
+									ItemStack offHand = player.getHeldItemOffhand();
+									if (offHand.getItem().equals(MITTS.get()) || gloveItemList.contains(offHand.getItem())) {
+										offHand.damageItem(1, player, (consumer) -> {});
+									} else {
+										LazyOptional<IFluidHandlerItem> fluidHandlerItem = stack
+												.getCapability(CapabilityFluidHandler.FLUID_HANDLER_ITEM_CAPABILITY);
 
-													if (fluidStack != null) {
-														for (FluidEffect effect : FluidEffect.values()) {
-															if (effect.isValid.test(fluidStack)) {
-																if (event.world.getGameTime() % 20 == 0) {
-																	effect.interactPlayer.accept(player);
-																}
+										if (fluidHandlerItem.isPresent()) {
+											if (blacklist.contains(stack.getItem()))
+												return;
+											fluidHandlerItem.ifPresent(fh -> {
+												FluidStack fluidStack = fh.drain(1000,
+														IFluidHandler.FluidAction.SIMULATE);
+
+												if (fluidStack != null) {
+													for (FluidEffect effect : FluidEffect.values()) {
+														if (effect.isValid.test(fluidStack)) {
+															if (event.world.getGameTime() % 20 == 0) {
+																effect.interactPlayer.accept(player);
 															}
 														}
 													}
-												});
-											} else if (event.world.getGameTime() % 20 == 0) {
-												if (coldWhitelist.contains(stack.getItem())) {
-													FluidEffect.COLD.interactPlayer.accept(player);
 												}
-												if (gaseousWhitelist.contains(stack.getItem())
-														&& HotOrNotConfig.COMMON.GASEOUS.get()) {
-													FluidEffect.GAS.interactPlayer.accept(player);
-												}
-												if (hotWhitelist.contains(stack.getItem())) {
-													FluidEffect.HOT.interactPlayer.accept(player);
-												}
+											});
+
+										} else if (event.world.getGameTime() % 20 == 0) {
+											if (coldWhitelist.contains(stack.getItem())) {
+												FluidEffect.COLD.interactPlayer.accept(player);
+											}
+											if (gaseousWhitelist.contains(stack.getItem())
+													&& HotOrNotConfig.COMMON.GASEOUS.get()) {
+												FluidEffect.GAS.interactPlayer.accept(player);
+											}
+											if (hotWhitelist.contains(stack.getItem())) {
+												FluidEffect.HOT.interactPlayer.accept(player);
 											}
 										}
 									}
 								}
-							});
-						}
+							}
+						});
 					}
 				}
 			}
+		}
 	}
 
 	public enum FluidEffect {
@@ -197,6 +199,7 @@ public class HotOrNot {
 				iFluidHandler.ifPresent(h -> {
 					FluidStack fluidStack = h.drain(1000, IFluidHandler.FluidAction.SIMULATE);
 					if (fluidStack != null) {
+
 						for (FluidEffect effect : FluidEffect.values()) {
 							if (effect.isValid.test(fluidStack)) {
 								event.getToolTip()

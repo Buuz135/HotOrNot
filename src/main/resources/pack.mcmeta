@@ -1,6 +1,6 @@
 {
-  "pack": {
-    "description": "HotOrNot",
-    "pack_format": 3
-  }
+    "pack": {
+        "description": "HotOrNot resources",
+        "pack_format": 5
+    }
 }

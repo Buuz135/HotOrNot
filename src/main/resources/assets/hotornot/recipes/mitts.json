@@ -1,0 +1,23 @@
+{
+  "result": {
+    "item": "hotornot:mitts"
+  },
+  "pattern": [
+    " W ",
+    "WLW",
+    "IW "
+  ],
+  "type": "forge:ore_shaped",
+  "key": {
+    "W": {
+      "item": "minecraft:wool",
+      "data": 12
+    },
+    "L": {
+      "item": "minecraft:leather"
+    },
+    "I": {
+      "item": "minecraft:iron_ingot"
+    }
+  }
+}

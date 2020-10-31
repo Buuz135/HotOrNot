@@ -31,21 +31,20 @@ public class DataGenerators {
 			case "de_de":
 				add("_comment", "Translation (de_de) by Affehund");
 				add(HotOrNot.MITTS.get(), "Handschuhe");
-				add(HotOrNot.Tooltips.TOO_COLD, "Zu kalt zum Anfassen!");
-				add(HotOrNot.Tooltips.TOO_HOT, "Zu heiﬂ zum Anfassen!");
-				add(HotOrNot.Tooltips.TOO_LIGHT, "Zu leicht zum Anfassen!");
-				add(HotOrNot.Tooltips.MITTS, "In die Zweithand nehmen um schlechte Effekte zu vermeiden.");
+				add(HotOrNot.TOOLTIP_TOO_COLD, "Zu kalt zum Anfassen!");
+				add(HotOrNot.TOOLTIP_TOO_HOT, "Zu heiﬂ zum Anfassen!");
+				add(HotOrNot.TOOLTIP_TOO_LIGHT, "Zu leicht zum Anfassen!");
+				add(HotOrNot.TOOLTIP_MITTS, "In die Zweithand nehmen um schlechte Effekte zu vermeiden.");
 				break;
 			case "en_us":
 				add("_comment", "Translation (en_us) by Affehund");
 				add(HotOrNot.MITTS.get(), "Mitts");
-				add(HotOrNot.Tooltips.TOO_COLD, "Too cold to handle!");
-				add(HotOrNot.Tooltips.TOO_HOT, "Too hot to handle!");
-				add(HotOrNot.Tooltips.TOO_LIGHT, "Too light to handle!");
-				add(HotOrNot.Tooltips.MITTS, "Wear in the offhand to avoid bad effects.");
+				add(HotOrNot.TOOLTIP_TOO_COLD, "Too cold to handle!");
+				add(HotOrNot.TOOLTIP_TOO_HOT, "Too hot to handle!");
+				add(HotOrNot.TOOLTIP_TOO_LIGHT, "Too light to handle!");
+				add(HotOrNot.TOOLTIP_MITTS, "Wear in the offhand to avoid bad effects.");
 			}
 		}
-
 	}
 
 	public static final class ItemModels extends ItemModelProvider {

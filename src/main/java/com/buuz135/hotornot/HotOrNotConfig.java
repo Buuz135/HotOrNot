@@ -29,14 +29,14 @@ public class HotOrNotConfig {
 		public final BooleanValue GASEOUS;
 		public final BooleanValue TOOLTIP;
 
-		public final ConfigValue<ArrayList<String>> GLOVE_ITEMS;
+		public final ConfigValue<ArrayList<String>> MITTS_ITEMS;
 		public final ConfigValue<ArrayList<String>> BLACKLISTED_ITEMS;
 		public final ConfigValue<ArrayList<String>> COLD_WHITELISTED_ITEMS;
 		public final ConfigValue<ArrayList<String>> GASEOUS_WHITELISTED_ITEMS;
 		public final ConfigValue<ArrayList<String>> HOT_WHITELISTED_ITEMS;
 
 
-		public final ArrayList<String> defaultgloveItems = new ArrayList<String>();
+		public final ArrayList<String> defaultMittsItems = new ArrayList<String>();
 		public final ArrayList<String> defaultBlacklist = new ArrayList<String>();
 		public final ArrayList<String> defaultColdWhitelist = new ArrayList<String>();
 		public final ArrayList<String> defaultGaseousWhitelist = new ArrayList<String>();
@@ -72,9 +72,9 @@ public class HotOrNotConfig {
 					"This sets whether an item that contains a fluid will have a tooltip that they are gaseous, too hot or too cold.")
 					.define("tooltips", true);
 			
-			GLOVE_ITEMS = builder.comment(
-					"This sets an item as a glove item. It prevents all effects.")
-					.define("glove_items", defaultgloveItems);
+			MITTS_ITEMS = builder.comment(
+					"This sets an item as a mitts item. It prevents all effects.")
+					.define("mitts_items", defaultMittsItems);
 
 			BLACKLISTED_ITEMS = builder.comment(
 					"This sets an item on a fluid blacklist. It won't be affected.")
@@ -107,7 +107,7 @@ public class HotOrNotConfig {
 	@SubscribeEvent
 	public static void onLoad(final ModConfig.Loading event) {
 		HotOrNot.LOGGER.info("Loaded {} config file {}", HotOrNot.MOD_ID, event.getConfig().getFileName());
-		loopArrayList(HotOrNotConfig.COMMON.GLOVE_ITEMS.get(), HotOrNot.gloveItemList);
+		loopArrayList(HotOrNotConfig.COMMON.MITTS_ITEMS.get(), HotOrNot.mittsItemList);
 		loopArrayList(HotOrNotConfig.COMMON.BLACKLISTED_ITEMS.get(), HotOrNot.blacklist);
 		loopArrayList(HotOrNotConfig.COMMON.COLD_WHITELISTED_ITEMS.get(), HotOrNot.coldWhitelist);
 		loopArrayList(HotOrNotConfig.COMMON.GASEOUS_WHITELISTED_ITEMS.get(), HotOrNot.gaseousWhitelist);

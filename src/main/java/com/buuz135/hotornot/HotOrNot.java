@@ -17,7 +17,6 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.potion.EffectInstance;
 import net.minecraft.potion.Effects;
 import net.minecraft.util.text.ITextComponent;
-import net.minecraft.util.text.StringTextComponent;
 import net.minecraft.util.text.TextFormatting;
 import net.minecraft.util.text.TranslationTextComponent;
 import net.minecraftforge.common.MinecraftForge;
@@ -55,7 +54,7 @@ public class HotOrNot {
 	public static final Set<Item> hotWhitelist = new HashSet<>();
 	public static final Set<Item> coldWhitelist = new HashSet<>();
 	public static final Set<Item> gaseousWhitelist = new HashSet<>();
-	public static final Set<Item> gloveItemList = new HashSet<>();
+	public static final Set<Item> mittsItemList = new HashSet<>();
 
 	public HotOrNot() {
 		LOGGER.debug("Loading up " + NAME);
@@ -65,12 +64,10 @@ public class HotOrNot {
 		ITEMS.register(modEventBus);
 	}
 
-	public static final class Tooltips {
-		public static final String TOO_HOT = "tooltip.hotornot.toohot";
-		public static final String TOO_COLD = "tooltip.hotornot.toocold";
-		public static final String TOO_LIGHT = "tooltip.hotornot.toolight";
-		public static final String MITTS = "tooltip.hotornot.mitts";
-	}
+	public static final String TOOLTIP_TOO_HOT = "tooltip.hotornot.toohot";
+	public static final String TOOLTIP_TOO_COLD = "tooltip.hotornot.toocold";
+	public static final String TOOLTIP_TOO_LIGHT = "tooltip.hotornot.toolight";
+	public static final String TOOLTIP_MITTS = "tooltip.hotornot.mitts";
 
 	public static final DeferredRegister<Item> ITEMS = DeferredRegister.create(ForgeRegistries.ITEMS, MOD_ID);
 	public static final RegistryObject<Item> MITTS = ITEMS.register("mitts", () -> new Item(new Item.Properties()
@@ -92,25 +89,19 @@ public class HotOrNot {
 
 	@SubscribeEvent
 	public void onTick(final TickEvent.WorldTickEvent event) {
-		if (event.world.isRemote)
-			return;
-		if (event.phase == TickEvent.Phase.START) {
+		if (!event.world.isRemote)
+			if (event.phase == TickEvent.Phase.START) {
+				for (PlayerEntity player : event.world.getPlayers()) {
+					if (player instanceof ServerPlayerEntity) {
+						if (!player.isBurning() && !player.isCreative()
+								&& !player.isPotionActive(Effects.FIRE_RESISTANCE)) {
+							LazyOptional<IItemHandler> handler = player
+									.getCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY);
 
-			for (PlayerEntity player : event.world.getPlayers()) {
-				if (player instanceof ServerPlayerEntity) {
-					if (!player.isBurning() && !player.isCreative()
-							&& !player.isPotionActive(Effects.FIRE_RESISTANCE)) {
-						LazyOptional<IItemHandler> handler = player
-								.getCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY);
-
-						handler.ifPresent(h -> {
-							for (int i = 0; i < h.getSlots(); i++) {
-								ItemStack stack = h.getStackInSlot(i);
-								if (!stack.isEmpty()) {
-									ItemStack offHand = player.getHeldItemOffhand();
-									if (offHand.getItem().equals(MITTS.get()) || gloveItemList.contains(offHand.getItem())) {
-										offHand.damageItem(1, player, (consumer) -> {});
-									} else {
+							handler.ifPresent(h -> {
+								for (int i = 0; i < h.getSlots(); i++) {
+									ItemStack stack = h.getStackInSlot(i);
+									if (!stack.isEmpty()) {
 										LazyOptional<IFluidHandlerItem> fluidHandlerItem = stack
 												.getCapability(CapabilityFluidHandler.FLUID_HANDLER_ITEM_CAPABILITY);
 
@@ -124,61 +115,68 @@ public class HotOrNot {
 												if (fluidStack != null) {
 													for (FluidEffect effect : FluidEffect.values()) {
 														if (effect.isValid.test(fluidStack)) {
-															if (event.world.getGameTime() % 20 == 0) {
-																effect.interactPlayer.accept(player);
-															}
+															applyEffectAndDamageMitts(player, effect, event, stack);
 														}
 													}
 												}
 											});
-
-										} else if (event.world.getGameTime() % 20 == 0) {
+										} else {
 											if (coldWhitelist.contains(stack.getItem())) {
-												FluidEffect.COLD.interactPlayer.accept(player);
+												applyEffectAndDamageMitts(player, FluidEffect.COLD, event, stack);
 											}
 											if (gaseousWhitelist.contains(stack.getItem())
 													&& HotOrNotConfig.COMMON.GASEOUS.get()) {
-												FluidEffect.GAS.interactPlayer.accept(player);
+												applyEffectAndDamageMitts(player, FluidEffect.GAS, event, stack);
 											}
 											if (hotWhitelist.contains(stack.getItem())) {
-												FluidEffect.HOT.interactPlayer.accept(player);
+												applyEffectAndDamageMitts(player, FluidEffect.HOT, event, stack);
 											}
 										}
 									}
 								}
-							}
-						});
+							});
+						}
 					}
 				}
 			}
+	}
+
+	public void applyEffectAndDamageMitts(PlayerEntity player, FluidEffect effect, TickEvent.WorldTickEvent event,
+			ItemStack stack) {
+		ItemStack offHand = player.getHeldItemOffhand();
+		if (offHand.getItem().equals(MITTS.get()) || mittsItemList.contains(stack.getItem())) {
+			offHand.damageItem(1, player, consumer -> {
+			});
+		} else if (event.world.getGameTime() % 20 == 0) {
+			effect.interactPlayer.accept(player);
 		}
 	}
 
 	public enum FluidEffect {
 		HOT(fluidStack -> fluidStack.getFluid().getAttributes()
 				.getTemperature(fluidStack) >= HotOrNotConfig.COMMON.HOT_TEMPERATURE.get(),
-				entityPlayerMP -> entityPlayerMP.setFire(1), TextFormatting.RED, Tooltips.TOO_HOT),
+				entityPlayerMP -> entityPlayerMP.setFire(1),
+				new TranslationTextComponent(TOOLTIP_TOO_HOT).mergeStyle(TextFormatting.RED)),
 		COLD(fluidStack -> fluidStack.getFluid().getAttributes()
 				.getTemperature(fluidStack) <= HotOrNotConfig.COMMON.COLD_TEMPERATURE.get(), entityPlayerMP -> {
 					entityPlayerMP.addPotionEffect(new EffectInstance(Effects.SLOWNESS, 21, 1));
 					entityPlayerMP.addPotionEffect(new EffectInstance(Effects.WEAKNESS, 21, 1));
-				}, TextFormatting.AQUA, Tooltips.TOO_COLD),
+				}, new TranslationTextComponent(TOOLTIP_TOO_COLD).mergeStyle(TextFormatting.AQUA)),
+
 		GAS(fluidStack -> fluidStack.getFluid().getAttributes().isGaseous(fluidStack)
 				&& HotOrNotConfig.COMMON.GASEOUS.get() == true,
 				entityPlayerMP -> entityPlayerMP.addPotionEffect(new EffectInstance(Effects.LEVITATION, 21, 1)),
-				TextFormatting.YELLOW, Tooltips.TOO_LIGHT);
+				new TranslationTextComponent(TOOLTIP_TOO_LIGHT).mergeStyle(TextFormatting.YELLOW));
 
 		private final Predicate<FluidStack> isValid;
 		private final Consumer<PlayerEntity> interactPlayer;
-		private final TextFormatting color;
-		private final String tooltip;
+		private final ITextComponent tooltip;
 
-		FluidEffect(Predicate<FluidStack> isValid, Consumer<PlayerEntity> interactPlayer, TextFormatting color,
-				String tooltip) {
+		FluidEffect(Predicate<FluidStack> isValid, Consumer<PlayerEntity> interactPlayer,
+				ITextComponent iTextComponent) {
 			this.isValid = isValid;
 			this.interactPlayer = interactPlayer;
-			this.color = color;
-			this.tooltip = tooltip;
+			this.tooltip = iTextComponent;
 		}
 	}
 
@@ -186,40 +184,33 @@ public class HotOrNot {
 	public void onTooltip(final ItemTooltipEvent event) {
 		ItemStack stack = event.getItemStack();
 		if (HotOrNotConfig.COMMON.TOOLTIP.get() && !stack.isEmpty()) {
-			if (stack.getItem() == HotOrNot.MITTS.get() || gloveItemList.contains(stack.getItem())) {
-				event.getToolTip().add(new TranslationTextComponent(Tooltips.MITTS));
+			if (stack.getItem() == HotOrNot.MITTS.get() || mittsItemList.contains(stack.getItem())) {
+				event.getToolTip().add(new TranslationTextComponent(TOOLTIP_MITTS).mergeStyle(TextFormatting.GREEN));
 			}
 			if (blacklist.contains(stack.getItem()))
 				return;
 			if (stack.getCapability(CapabilityFluidHandler.FLUID_HANDLER_ITEM_CAPABILITY).isPresent()) {
-
 				LazyOptional<IFluidHandlerItem> iFluidHandler = stack
 						.getCapability(CapabilityFluidHandler.FLUID_HANDLER_ITEM_CAPABILITY);
-
 				iFluidHandler.ifPresent(h -> {
 					FluidStack fluidStack = h.drain(1000, IFluidHandler.FluidAction.SIMULATE);
 					if (fluidStack != null) {
-
 						for (FluidEffect effect : FluidEffect.values()) {
 							if (effect.isValid.test(fluidStack)) {
-								event.getToolTip()
-										.add((ITextComponent) new StringTextComponent(effect.color + effect.tooltip));
+								event.getToolTip().add(effect.tooltip);
 							}
 						}
 					}
 				});
 			} else {
 				if (coldWhitelist.contains(stack.getItem())) {
-					event.getToolTip().add((ITextComponent) new StringTextComponent(
-							FluidEffect.COLD.color + FluidEffect.COLD.tooltip));
+					event.getToolTip().add(FluidEffect.COLD.tooltip);
 				}
 				if (gaseousWhitelist.contains(stack.getItem()) && HotOrNotConfig.COMMON.GASEOUS.get()) {
-					event.getToolTip().add(
-							(ITextComponent) new StringTextComponent(FluidEffect.GAS.color + FluidEffect.GAS.tooltip));
+					event.getToolTip().add(FluidEffect.GAS.tooltip);
 				}
 				if (hotWhitelist.contains(stack.getItem())) {
-					event.getToolTip().add(
-							(ITextComponent) new StringTextComponent(FluidEffect.HOT.color + FluidEffect.HOT.tooltip));
+					event.getToolTip().add(FluidEffect.HOT.tooltip);
 				}
 			}
 		}

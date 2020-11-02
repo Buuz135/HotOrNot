@@ -112,7 +112,7 @@ public class HotOrNot {
 												FluidStack fluidStack = fh.drain(1000,
 														IFluidHandler.FluidAction.SIMULATE);
 
-												if (fluidStack != null) {
+												if (fluidStack != null && fluidStack != FluidStack.EMPTY) {
 													for (FluidEffect effect : FluidEffect.values()) {
 														if (effect.isValid.test(fluidStack)) {
 															applyEffectAndDamageMitts(player, effect, event, stack);
@@ -194,7 +194,7 @@ public class HotOrNot {
 						.getCapability(CapabilityFluidHandler.FLUID_HANDLER_ITEM_CAPABILITY);
 				iFluidHandler.ifPresent(h -> {
 					FluidStack fluidStack = h.drain(1000, IFluidHandler.FluidAction.SIMULATE);
-					if (fluidStack != null) {
+					if (fluidStack != null && fluidStack != FluidStack.EMPTY) {
 						for (FluidEffect effect : FluidEffect.values()) {
 							if (effect.isValid.test(fluidStack)) {
 								event.getToolTip().add(effect.tooltip);

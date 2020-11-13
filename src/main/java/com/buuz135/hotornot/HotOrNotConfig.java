@@ -6,7 +6,6 @@ import java.util.Set;
 import org.apache.commons.lang3.tuple.Pair;
 
 import net.minecraft.item.Item;
-import net.minecraft.item.Items;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.common.ForgeConfigSpec.BooleanValue;
@@ -43,13 +42,14 @@ public class HotOrNotConfig {
 		public final ArrayList<String> defaultHotWhitelist = new ArrayList<String>();
 
 
-		private void addToStringArrayList(ArrayList<String> list, Item item) {
-			list.add(item.getRegistryName().toString());
-		}
+//		private void addToStringArrayList(ArrayList<String> list, Item item) {
+//		list.add(item.getRegistryName().toString());
+//	}
 
 
-		public Common(ForgeConfigSpec.Builder builder) {
-			addToStringArrayList(defaultBlacklist, Items.BUCKET);
+	public Common(ForgeConfigSpec.Builder builder) {
+//		addToStringArrayList(defaultBlacklist, Items.BUCKET);
+//		addToStringArrayList(defaultBlacklist, Items.MILK_BUCKET);
 			
 			builder.comment("HotOrNot Config").push("general");
 			

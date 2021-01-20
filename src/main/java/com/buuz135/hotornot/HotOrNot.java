@@ -89,7 +89,7 @@ public class HotOrNot {
 
 	@SubscribeEvent
 	public void onTick(final TickEvent.WorldTickEvent event) {
-		if (!event.world.isRemote)
+		if (!event.world.isRemote) {
 			if (event.phase == TickEvent.Phase.START) {
 				for (PlayerEntity player : event.world.getPlayers()) {
 					if (player instanceof ServerPlayerEntity) {
@@ -115,21 +115,21 @@ public class HotOrNot {
 												if (fluidStack != null && fluidStack != FluidStack.EMPTY) {
 													for (FluidEffect effect : FluidEffect.values()) {
 														if (effect.isValid.test(fluidStack)) {
-															applyEffectAndDamageMitts(player, effect, event, stack);
+															applyEffectAndDamageMitts(player, effect, event);
 														}
 													}
 												}
 											});
 										} else {
 											if (coldWhitelist.contains(stack.getItem())) {
-												applyEffectAndDamageMitts(player, FluidEffect.COLD, event, stack);
+												applyEffectAndDamageMitts(player, FluidEffect.COLD, event);
 											}
 											if (gaseousWhitelist.contains(stack.getItem())
 													&& HotOrNotConfig.COMMON.GASEOUS.get()) {
-												applyEffectAndDamageMitts(player, FluidEffect.GAS, event, stack);
+												applyEffectAndDamageMitts(player, FluidEffect.GAS, event);
 											}
 											if (hotWhitelist.contains(stack.getItem())) {
-												applyEffectAndDamageMitts(player, FluidEffect.HOT, event, stack);
+												applyEffectAndDamageMitts(player, FluidEffect.HOT, event);
 											}
 										}
 									}
@@ -139,12 +139,12 @@ public class HotOrNot {
 					}
 				}
 			}
+		}
 	}
 
-	public void applyEffectAndDamageMitts(PlayerEntity player, FluidEffect effect, TickEvent.WorldTickEvent event,
-			ItemStack stack) {
+	public void applyEffectAndDamageMitts(PlayerEntity player, FluidEffect effect, TickEvent.WorldTickEvent event) {
 		ItemStack offHand = player.getHeldItemOffhand();
-		if (offHand.getItem().equals(MITTS.get()) || mittsItemList.contains(stack.getItem())) {
+		if (offHand.getItem().equals(MITTS.get()) || mittsItemList.contains(offHand.getItem())) {
 			offHand.damageItem(1, player, consumer -> {
 			});
 		} else if (event.world.getGameTime() % 20 == 0) {

@@ -19,6 +19,8 @@ import net.minecraft.potion.Effects;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TextFormatting;
 import net.minecraft.util.text.TranslationTextComponent;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.data.ExistingFileHelper;
 import net.minecraftforge.common.util.LazyOptional;
@@ -181,6 +183,7 @@ public class HotOrNot {
 	}
 
 	@SubscribeEvent
+	@OnlyIn(Dist.CLIENT)
 	public void onTooltip(final ItemTooltipEvent event) {
 		ItemStack stack = event.getItemStack();
 		if (HotOrNotConfig.COMMON.TOOLTIP.get() && !stack.isEmpty()) {

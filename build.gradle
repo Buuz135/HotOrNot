@@ -71,10 +71,6 @@ dependencies {
     minecraft "net.minecraftforge:forge:${mc_version}-${forge_version}"
 }
 
-processResources {
-    duplicatesStrategy = 'include'
-}
-
 jar {
     manifest {
         attributes([

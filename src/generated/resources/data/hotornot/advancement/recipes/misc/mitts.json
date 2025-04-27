@@ -5,7 +5,7 @@
       "conditions": {
         "items": [
           {
-            "tag": "forge:leather"
+            "items": "#c:leathers"
           }
         ]
       },
@@ -20,14 +20,13 @@
   },
   "requirements": [
     [
-      "has_item",
-      "has_the_recipe"
+      "has_the_recipe",
+      "has_item"
     ]
   ],
   "rewards": {
     "recipes": [
       "hotornot:mitts"
     ]
-  },
-  "sends_telemetry_event": false
+  }
 }

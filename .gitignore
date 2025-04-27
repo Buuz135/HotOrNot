@@ -14,13 +14,13 @@ out
 .idea
 
 # gradle
+logs
 build
 .gradle
 
 # other
 eclipse
 run
-logs
 classes
-/libs/
 
+/includedMods/

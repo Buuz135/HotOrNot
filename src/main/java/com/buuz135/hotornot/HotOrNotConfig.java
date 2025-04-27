@@ -1,31 +1,28 @@
 package com.buuz135.hotornot;
 
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
-import net.minecraftforge.common.ForgeConfigSpec;
-import net.minecraftforge.common.ForgeConfigSpec.BooleanValue;
-import net.minecraftforge.common.ForgeConfigSpec.ConfigValue;
-import net.minecraftforge.common.ForgeConfigSpec.IntValue;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.common.Mod.EventBusSubscriber.Bus;
-import net.minecraftforge.fml.event.config.ModConfigEvent;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.fml.event.config.ModConfigEvent;
+import net.neoforged.neoforge.common.ModConfigSpec;
+import net.neoforged.neoforge.common.ModConfigSpec.ConfigValue;
 import org.apache.commons.lang3.tuple.Pair;
 
 import java.util.ArrayList;
 import java.util.Set;
 
-@Mod.EventBusSubscriber(modid = HotOrNot.MOD_ID, bus = Bus.MOD)
+@EventBusSubscriber(modid = HotOrNot.MOD_ID, bus = EventBusSubscriber.Bus.MOD)
 public class HotOrNotConfig {
 	public static class Common {
 
-		public final IntValue MITTS_DURABILITY;
+		public final ModConfigSpec.IntValue MITTS_DURABILITY;
 
-		public final IntValue HOT_TEMPERATURE;
-		public final IntValue COLD_TEMPERATURE;
-		public final BooleanValue GASEOUS;
-		public final BooleanValue TOOLTIP;
+		public final ModConfigSpec.IntValue HOT_TEMPERATURE;
+		public final ModConfigSpec.IntValue COLD_TEMPERATURE;
+		public final ModConfigSpec.BooleanValue GASEOUS;
+		public final ModConfigSpec.BooleanValue TOOLTIP;
 
 		public final ConfigValue<ArrayList<String>> MITTS_ITEMS;
 		public final ConfigValue<ArrayList<String>> BLACKLISTED_ITEMS;
@@ -40,7 +37,7 @@ public class HotOrNotConfig {
 		public final ArrayList<String> defaultGaseousWhitelist = new ArrayList<>();
 		public final ArrayList<String> defaultHotWhitelist = new ArrayList<>();
 
-	public Common(ForgeConfigSpec.Builder builder) {
+	public Common(ModConfigSpec.Builder builder) {
 
 			builder.comment("HotOrNot Config").push("general");
 
@@ -87,10 +84,10 @@ public class HotOrNotConfig {
 		}
 	}
 
-	public static final ForgeConfigSpec COMMON_SPEC;
+	public static final ModConfigSpec COMMON_SPEC;
 	public static final Common COMMON;
 	static {
-		final Pair<Common, ForgeConfigSpec> specPair = new ForgeConfigSpec.Builder().configure(Common::new);
+		final Pair<Common, ModConfigSpec> specPair = new ModConfigSpec.Builder().configure(Common::new);
 		COMMON_SPEC = specPair.getRight();
 		COMMON = specPair.getLeft();
 	}
@@ -112,7 +109,7 @@ public class HotOrNotConfig {
 
 	public static void loopArrayList(ArrayList<String> list, Set<Item> set) {
 		for (String string : list) {
-			set.add(ForgeRegistries.ITEMS.getValue(new ResourceLocation(string)));
+			set.add(BuiltInRegistries.ITEM.get(ResourceLocation.tryParse(string)));
 		}
 	}
 }

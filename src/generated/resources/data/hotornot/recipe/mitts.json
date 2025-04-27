@@ -1,0 +1,24 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "key": {
+    "i": {
+      "tag": "c:ingots/iron"
+    },
+    "l": {
+      "tag": "c:leathers"
+    },
+    "w": {
+      "tag": "minecraft:wool"
+    }
+  },
+  "pattern": [
+    " w ",
+    "wlw",
+    "iw "
+  ],
+  "result": {
+    "count": 1,
+    "id": "hotornot:mitts"
+  }
+}

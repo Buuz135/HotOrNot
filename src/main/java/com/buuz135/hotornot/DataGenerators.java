@@ -1,33 +1,34 @@
 package com.buuz135.hotornot;
 
+import net.minecraft.core.HolderLookup;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.data.PackOutput;
-import net.minecraft.data.recipes.FinishedRecipe;
 import net.minecraft.data.recipes.RecipeCategory;
+import net.minecraft.data.recipes.RecipeOutput;
 import net.minecraft.data.recipes.RecipeProvider;
 import net.minecraft.data.recipes.ShapedRecipeBuilder;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.tags.ItemTags;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.Ingredient;
-import net.minecraftforge.client.model.generators.ItemModelProvider;
-import net.minecraftforge.common.Tags;
-import net.minecraftforge.common.crafting.conditions.IConditionBuilder;
-import net.minecraftforge.common.data.ExistingFileHelper;
-import net.minecraftforge.common.data.LanguageProvider;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.neoforged.neoforge.client.model.generators.ItemModelProvider;
+import net.neoforged.neoforge.common.Tags;
+import net.neoforged.neoforge.common.data.ExistingFileHelper;
+import net.neoforged.neoforge.common.data.LanguageProvider;
 
-import java.util.function.Consumer;
+import java.util.concurrent.CompletableFuture;
 
 public class DataGenerators {
     public static final class Languages extends LanguageProvider {
+        private final String locale;
         public Languages(PackOutput output, String locale) {
             super(output, HotOrNot.MOD_ID, locale);
+            this.locale = locale;
         }
 
         @Override
         protected void addTranslations() {
-            String locale = this.getName().replace("Languages: ", "");
             switch (locale) {
                 case "de_de" -> {
                     add("_comment", "Translation (de_de) by Affehund");
@@ -51,7 +52,7 @@ public class DataGenerators {
 
     public static final class ItemModels extends ItemModelProvider {
 
-        public static final ResourceLocation GENERATED = new ResourceLocation("item/generated");
+        public static final ResourceLocation GENERATED = ResourceLocation.withDefaultNamespace("item/generated");
 
         public ItemModels(PackOutput output, String modid, ExistingFileHelper existingFileHelper) {
             super(output, modid, existingFileHelper);
@@ -59,8 +60,8 @@ public class DataGenerators {
 
         @Override
         protected void registerModels() {
-            for (ResourceLocation id : ForgeRegistries.ITEMS.getKeys()) {
-                Item item = ForgeRegistries.ITEMS.getValue(id);
+            for (ResourceLocation id : BuiltInRegistries.ITEM.keySet()) {
+                Item item = BuiltInRegistries.ITEM.get(id);
                 if (item != null && HotOrNot.MOD_ID.equals(id.getNamespace())) {
                     if (!(item instanceof BlockItem)) {
                         this.defaultItem(id);
@@ -71,27 +72,24 @@ public class DataGenerators {
 
         private void defaultItem(ResourceLocation id) {
             this.withExistingParent(id.getPath(), GENERATED).texture("layer0",
-                    new ResourceLocation(id.getNamespace(), "item/" + id.getPath()));
+                    ResourceLocation.fromNamespaceAndPath(id.getNamespace(), "item/" + id.getPath()));
         }
     }
 
-    public static final class Recipes extends RecipeProvider implements IConditionBuilder {
+    public static final class Recipes extends RecipeProvider {
 
-        public Recipes(PackOutput output) {
-            super(output);
+        public Recipes(PackOutput output, CompletableFuture<HolderLookup.Provider> registries) {
+            super(output, registries);
         }
 
         @Override
-        protected void buildRecipes(Consumer<FinishedRecipe> consumer) {
+        protected void buildRecipes(RecipeOutput recipeOutput) {
             ShapedRecipeBuilder.shaped(RecipeCategory.MISC, HotOrNot.MITTS.get())
                     .pattern(" w ").pattern("wlw").pattern("iw ")
-                    .define('l', Ingredient.of(Tags.Items.LEATHER))
+                    .define('l', Ingredient.of(Tags.Items.LEATHERS))
                     .define('i', Ingredient.of(Tags.Items.INGOTS_IRON))
-                    .define('w', Ingredient.of(Items.BLACK_WOOL, Items.BLUE_WOOL, Items.BROWN_WOOL, Items.CYAN_WOOL,
-                            Items.GRAY_WOOL, Items.GREEN_WOOL, Items.LIGHT_BLUE_WOOL, Items.LIGHT_GRAY_WOOL,
-                            Items.LIME_WOOL, Items.MAGENTA_WOOL, Items.ORANGE_WOOL, Items.PINK_WOOL,
-                            Items.PURPLE_WOOL, Items.RED_WOOL, Items.WHITE_WOOL, Items.YELLOW_WOOL))
-                    .unlockedBy("has_item", has(Tags.Items.LEATHER)).save(consumer);
+                    .define('w', Ingredient.of(ItemTags.WOOL))
+                    .unlockedBy("has_item", has(Tags.Items.LEATHERS)).save(recipeOutput);
         }
     }
 }

@@ -1,45 +1,44 @@
 package com.buuz135.hotornot;
 
 import net.minecraft.ChatFormatting;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.data.DataGenerator;
 import net.minecraft.data.PackOutput;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.common.Tags;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.common.data.ExistingFileHelper;
-import net.minecraftforge.common.util.LazyOptional;
-import net.minecraftforge.data.event.GatherDataEvent;
-import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.event.entity.player.ItemTooltipEvent;
-import net.minecraftforge.eventbus.api.IEventBus;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.capability.IFluidHandler;
-import net.minecraftforge.fluids.capability.IFluidHandlerItem;
-import net.minecraftforge.fml.ModLoadingContext;
-import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.config.ModConfig;
-import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
-import net.minecraftforge.items.IItemHandler;
-import net.minecraftforge.registries.DeferredRegister;
-import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraftforge.registries.RegistryObject;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.ModContainer;
+import net.neoforged.fml.common.Mod;
+import net.neoforged.fml.config.ModConfig;
+import net.neoforged.neoforge.capabilities.Capabilities;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.common.Tags;
+import net.neoforged.neoforge.common.data.ExistingFileHelper;
+import net.neoforged.neoforge.data.event.GatherDataEvent;
+import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
+import net.neoforged.neoforge.event.entity.player.ItemTooltipEvent;
+import net.neoforged.neoforge.event.tick.LevelTickEvent;
+import net.neoforged.neoforge.fluids.FluidStack;
+import net.neoforged.neoforge.fluids.capability.IFluidHandler;
+import net.neoforged.neoforge.items.IItemHandler;
+import net.neoforged.neoforge.registries.DeferredItem;
+import net.neoforged.neoforge.registries.DeferredRegister;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
@@ -49,7 +48,6 @@ public class HotOrNot {
     public static final String NAME = "HotOrNot";
     public static final String COMMON_CONFIG_NAME = "hotornot.toml";
     public static final Logger LOGGER = LogManager.getLogger();
-    final IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
 
     // HashSet Lists
     public static final Set<Item> blacklist = new HashSet<>();
@@ -58,12 +56,12 @@ public class HotOrNot {
     public static final Set<Item> gaseousWhitelist = new HashSet<>();
     public static final Set<Item> mittsItemList = new HashSet<>();
 
-    public HotOrNot() {
+    public HotOrNot(IEventBus modEventBus, ModContainer container) {
         LOGGER.debug("Loading up " + NAME);
-        ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, HotOrNotConfig.COMMON_SPEC, COMMON_CONFIG_NAME);
+        container.registerConfig(ModConfig.Type.COMMON, HotOrNotConfig.COMMON_SPEC, COMMON_CONFIG_NAME);
         modEventBus.addListener(this::onBuildTabContents);
         modEventBus.addListener(this::gatherData);
-        MinecraftForge.EVENT_BUS.register(this);
+        NeoForge.EVENT_BUS.register(this);
         ITEMS.register(modEventBus);
     }
 
@@ -72,8 +70,8 @@ public class HotOrNot {
     public static final String TOOLTIP_TOO_LIGHT = "tooltip.hotornot.toolight";
     public static final String TOOLTIP_MITTS = "tooltip.hotornot.mitts";
 
-    public static final DeferredRegister<Item> ITEMS = DeferredRegister.create(ForgeRegistries.ITEMS, MOD_ID);
-    public static final RegistryObject<MittItem> MITTS = ITEMS.register("mitts", () -> new MittItem(new Item.Properties()
+    public static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(MOD_ID);
+    public static final DeferredItem<MittItem> MITTS = ITEMS.register("mitts", () -> new MittItem(new Item.Properties()
             .stacksTo(1).durability(12000)));
 
     private void onBuildTabContents(BuildCreativeModeTabContentsEvent event) {
@@ -86,9 +84,10 @@ public class HotOrNot {
         DataGenerator generator = event.getGenerator();
         PackOutput output = generator.getPackOutput();
         ExistingFileHelper existingFileHelper = event.getExistingFileHelper();
+        CompletableFuture<HolderLookup.Provider> lookupProvider = event.getLookupProvider();
 
         if (event.includeServer()) {
-            generator.addProvider(true, new DataGenerators.Recipes(output));
+            generator.addProvider(true, new DataGenerators.Recipes(output, lookupProvider));
         }
         if (event.includeClient()) {
             generator.addProvider(true, new DataGenerators.Languages(output, "en_us"));
@@ -98,53 +97,45 @@ public class HotOrNot {
     }
 
     @SubscribeEvent
-    public void onTick(final TickEvent.LevelTickEvent event) {
-        if (!event.level.isClientSide) {
-            if (event.phase == TickEvent.Phase.START) {
-                for (Player player : event.level.players()) {
-                    if (player instanceof ServerPlayer) {
-                        if (!player.isOnFire() && !player.isCreative()
-                                && !player.hasEffect(MobEffects.FIRE_RESISTANCE)) {
-                            LazyOptional<IItemHandler> handler = player
-                                    .getCapability(ForgeCapabilities.ITEM_HANDLER);
+    public void onTick(final LevelTickEvent.Pre event) {
+        if (!event.getLevel().isClientSide) {
+            for (Player player : event.getLevel().players()) {
+                if (player instanceof ServerPlayer) {
+                    if (!player.isOnFire() && !player.isCreative()
+                            && !player.hasEffect(MobEffects.FIRE_RESISTANCE)) {
+                        IItemHandler itemHandler = player.getCapability(Capabilities.ItemHandler.ENTITY);
+                        if (itemHandler != null) {
+                            for (int i = 0; i < itemHandler.getSlots(); i++) {
+                                ItemStack stack = itemHandler.getStackInSlot(i);
+                                if (!stack.isEmpty()) {
+                                    IFluidHandler fluidHandlerItem = stack.getCapability(Capabilities.FluidHandler.ITEM);
+                                    if (fluidHandlerItem != null) {
+                                        if (blacklist.contains(stack.getItem()))
+                                            return;
+                                        FluidStack fluidStack = fluidHandlerItem.drain(1000,
+                                                IFluidHandler.FluidAction.SIMULATE);
 
-                            handler.ifPresent(h -> {
-                                for (int i = 0; i < h.getSlots(); i++) {
-                                    ItemStack stack = h.getStackInSlot(i);
-                                    if (!stack.isEmpty()) {
-                                        LazyOptional<IFluidHandlerItem> fluidHandlerItem = stack
-                                                .getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM);
-
-                                        if (fluidHandlerItem.isPresent()) {
-                                            if (blacklist.contains(stack.getItem()))
-                                                return;
-                                            fluidHandlerItem.ifPresent(fh -> {
-                                                FluidStack fluidStack = fh.drain(1000,
-                                                        IFluidHandler.FluidAction.SIMULATE);
-
-                                                if (fluidStack != FluidStack.EMPTY) {
-                                                    for (FluidEffect effect : FluidEffect.values()) {
-                                                        if (effect.isValid.test(fluidStack)) {
-                                                            applyEffectAndDamageMitts(player, effect, event);
-                                                        }
-                                                    }
+                                        if (fluidStack != FluidStack.EMPTY) {
+                                            for (FluidEffect effect : FluidEffect.values()) {
+                                                if (effect.isValid.test(fluidStack)) {
+                                                    applyEffectAndDamageMitts(player, effect, event);
                                                 }
-                                            });
-                                        } else {
-                                            if (coldWhitelist.contains(stack.getItem())) {
-                                                applyEffectAndDamageMitts(player, FluidEffect.COLD, event);
                                             }
-                                            if (gaseousWhitelist.contains(stack.getItem())
-                                                    && HotOrNotConfig.COMMON.GASEOUS.get()) {
-                                                applyEffectAndDamageMitts(player, FluidEffect.GAS, event);
-                                            }
-                                            if (hotWhitelist.contains(stack.getItem())) {
-                                                applyEffectAndDamageMitts(player, FluidEffect.HOT, event);
-                                            }
+                                        }
+                                    } else {
+                                        if (coldWhitelist.contains(stack.getItem())) {
+                                            applyEffectAndDamageMitts(player, FluidEffect.COLD, event);
+                                        }
+                                        if (gaseousWhitelist.contains(stack.getItem())
+                                                && HotOrNotConfig.COMMON.GASEOUS.get()) {
+                                            applyEffectAndDamageMitts(player, FluidEffect.GAS, event);
+                                        }
+                                        if (hotWhitelist.contains(stack.getItem())) {
+                                            applyEffectAndDamageMitts(player, FluidEffect.HOT, event);
                                         }
                                     }
                                 }
-                            });
+                            }
                         }
                     }
                 }
@@ -152,12 +143,11 @@ public class HotOrNot {
         }
     }
 
-    public void applyEffectAndDamageMitts(Player player, FluidEffect effect, TickEvent.LevelTickEvent event) {
+    public void applyEffectAndDamageMitts(Player player, FluidEffect effect, LevelTickEvent event) {
         ItemStack offHand = player.getOffhandItem();
         if (offHand.getItem().equals(MITTS.get()) || mittsItemList.contains(offHand.getItem())) {
-            offHand.hurtAndBreak(1, player, consumer -> {
-            });
-        } else if (event.level.getGameTime() % 20 == 0) {
+            offHand.hurtAndBreak(1, player, EquipmentSlot.MAINHAND);
+        } else if (event.getLevel().getGameTime() % 20 == 0) {
             effect.interactPlayer.accept(player);
         }
     }
@@ -165,7 +155,7 @@ public class HotOrNot {
     public enum FluidEffect {
         HOT(fluidStack -> fluidStack.getFluid().getFluidType()
                 .getTemperature(fluidStack) >= HotOrNotConfig.COMMON.HOT_TEMPERATURE.get(),
-                entityPlayerMP -> entityPlayerMP.setSecondsOnFire(1),
+                entityPlayerMP -> entityPlayerMP.igniteForSeconds(1),
                 Component.translatable(TOOLTIP_TOO_HOT).withStyle(ChatFormatting.RED)),
         COLD(fluidStack -> fluidStack.getFluid().getFluidType()
                 .getTemperature(fluidStack) <= HotOrNotConfig.COMMON.COLD_TEMPERATURE.get(), entityPlayerMP -> {
@@ -200,19 +190,16 @@ public class HotOrNot {
             }
             if (blacklist.contains(stack.getItem()))
                 return;
-            if (stack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).isPresent()) {
-                LazyOptional<IFluidHandlerItem> iFluidHandler = stack
-                        .getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM);
-                iFluidHandler.ifPresent(h -> {
-                    FluidStack fluidStack = h.drain(1000, IFluidHandler.FluidAction.SIMULATE);
-                    if (fluidStack != FluidStack.EMPTY) {
-                        for (FluidEffect effect : FluidEffect.values()) {
-                            if (effect.isValid.test(fluidStack)) {
-                                event.getToolTip().add(effect.tooltip);
-                            }
+            IFluidHandler fluidHandler = stack.getCapability(Capabilities.FluidHandler.ITEM);
+            if (fluidHandler != null) {
+                FluidStack fluidStack = fluidHandler.drain(1000, IFluidHandler.FluidAction.SIMULATE);
+                if (fluidStack != FluidStack.EMPTY) {
+                    for (FluidEffect effect : FluidEffect.values()) {
+                        if (effect.isValid.test(fluidStack)) {
+                            event.getToolTip().add(effect.tooltip);
                         }
                     }
-                });
+                }
             } else {
                 if (coldWhitelist.contains(stack.getItem())) {
                     event.getToolTip().add(FluidEffect.COLD.tooltip);

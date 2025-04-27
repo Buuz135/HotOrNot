@@ -1,8 +1,7 @@
 package com.buuz135.hotornot;
 
-import net.minecraft.data.PackOutput;
+import net.minecraft.data.DataGenerator;
 import net.minecraft.data.recipes.FinishedRecipe;
-import net.minecraft.data.recipes.RecipeCategory;
 import net.minecraft.data.recipes.RecipeProvider;
 import net.minecraft.data.recipes.ShapedRecipeBuilder;
 import net.minecraft.resources.ResourceLocation;
@@ -21,8 +20,8 @@ import java.util.function.Consumer;
 
 public class DataGenerators {
     public static final class Languages extends LanguageProvider {
-        public Languages(PackOutput output, String locale) {
-            super(output, HotOrNot.MOD_ID, locale);
+        public Languages(DataGenerator gen, String locale) {
+            super(gen, HotOrNot.MOD_ID, locale);
         }
 
         @Override
@@ -53,8 +52,8 @@ public class DataGenerators {
 
         public static final ResourceLocation GENERATED = new ResourceLocation("item/generated");
 
-        public ItemModels(PackOutput output, String modid, ExistingFileHelper existingFileHelper) {
-            super(output, modid, existingFileHelper);
+        public ItemModels(DataGenerator gen, String modid, ExistingFileHelper existingFileHelper) {
+            super(gen, modid, existingFileHelper);
         }
 
         @Override
@@ -77,13 +76,13 @@ public class DataGenerators {
 
     public static final class Recipes extends RecipeProvider implements IConditionBuilder {
 
-        public Recipes(PackOutput output) {
-            super(output);
+        public Recipes(DataGenerator gen) {
+            super(gen);
         }
 
         @Override
-        protected void buildRecipes(Consumer<FinishedRecipe> consumer) {
-            ShapedRecipeBuilder.shaped(RecipeCategory.MISC, HotOrNot.MITTS.get())
+        protected void buildCraftingRecipes(Consumer<FinishedRecipe> consumer) {
+            ShapedRecipeBuilder.shaped(HotOrNot.MITTS.get())
                     .pattern(" w ").pattern("wlw").pattern("iw ")
                     .define('l', Ingredient.of(Tags.Items.LEATHER))
                     .define('i', Ingredient.of(Tags.Items.INGOTS_IRON))

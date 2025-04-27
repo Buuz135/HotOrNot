@@ -1,8 +1,6 @@
 {
     "pack": {
-        "description": {
-            "text": "HotOrNot resources"
-        },
-        "pack_format": 15
+        "description": "HotOrNot resources",
+        "pack_format": 6
     }
 }

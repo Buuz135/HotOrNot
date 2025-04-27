@@ -2,39 +2,38 @@ package com.buuz135.hotornot;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.data.DataGenerator;
-import net.minecraft.data.PackOutput;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.CreativeModeTabs;
+import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.common.Tags;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.data.ExistingFileHelper;
 import net.minecraftforge.common.util.LazyOptional;
-import net.minecraftforge.data.event.GatherDataEvent;
-import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.ItemTooltipEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fluids.FluidStack;
+import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandlerItem;
 import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.minecraftforge.fmllegacy.RegistryObject;
+import net.minecraftforge.forge.event.lifecycle.GatherDataEvent;
+import net.minecraftforge.items.CapabilityItemHandler;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraftforge.registries.RegistryObject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -61,7 +60,6 @@ public class HotOrNot {
     public HotOrNot() {
         LOGGER.debug("Loading up " + NAME);
         ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, HotOrNotConfig.COMMON_SPEC, COMMON_CONFIG_NAME);
-        modEventBus.addListener(this::onBuildTabContents);
         modEventBus.addListener(this::gatherData);
         MinecraftForge.EVENT_BUS.register(this);
         ITEMS.register(modEventBus);
@@ -73,47 +71,40 @@ public class HotOrNot {
     public static final String TOOLTIP_MITTS = "tooltip.hotornot.mitts";
 
     public static final DeferredRegister<Item> ITEMS = DeferredRegister.create(ForgeRegistries.ITEMS, MOD_ID);
-    public static final RegistryObject<MittItem> MITTS = ITEMS.register("mitts", () -> new MittItem(new Item.Properties()
-            .stacksTo(1).durability(12000)));
-
-    private void onBuildTabContents(BuildCreativeModeTabContentsEvent event) {
-        if(event.getTabKey().equals(CreativeModeTabs.SEARCH)) {
-            event.accept(MITTS.get());
-        }
-    }
+    public static final RegistryObject<Item> MITTS = ITEMS.register("mitts", () -> new Item(new Item.Properties()
+            .stacksTo(1).durability(HotOrNotConfig.COMMON.MITTS_DURABILITY.get()).tab(CreativeModeTab.TAB_MISC)));
 
     public void gatherData(final GatherDataEvent event) {
         DataGenerator generator = event.getGenerator();
-        PackOutput output = generator.getPackOutput();
         ExistingFileHelper existingFileHelper = event.getExistingFileHelper();
 
         if (event.includeServer()) {
-            generator.addProvider(true, new DataGenerators.Recipes(output));
+            generator.addProvider(new DataGenerators.Recipes(generator));
         }
         if (event.includeClient()) {
-            generator.addProvider(true, new DataGenerators.Languages(output, "en_us"));
-            generator.addProvider(true, new DataGenerators.Languages(output, "de_de"));
-            generator.addProvider(true, new DataGenerators.ItemModels(output, MOD_ID, existingFileHelper));
+            generator.addProvider(new DataGenerators.Languages(generator, "en_us"));
+            generator.addProvider(new DataGenerators.Languages(generator, "de_de"));
+            generator.addProvider(new DataGenerators.ItemModels(generator, MOD_ID, existingFileHelper));
         }
     }
 
     @SubscribeEvent
-    public void onTick(final TickEvent.LevelTickEvent event) {
-        if (!event.level.isClientSide) {
+    public void onTick(final TickEvent.WorldTickEvent event) {
+        if (!event.world.isClientSide) {
             if (event.phase == TickEvent.Phase.START) {
-                for (Player player : event.level.players()) {
+                for (Player player : event.world.players()) {
                     if (player instanceof ServerPlayer) {
                         if (!player.isOnFire() && !player.isCreative()
                                 && !player.hasEffect(MobEffects.FIRE_RESISTANCE)) {
                             LazyOptional<IItemHandler> handler = player
-                                    .getCapability(ForgeCapabilities.ITEM_HANDLER);
+                                    .getCapability(CapabilityItemHandler.ITEM_HANDLER_CAPABILITY);
 
                             handler.ifPresent(h -> {
                                 for (int i = 0; i < h.getSlots(); i++) {
                                     ItemStack stack = h.getStackInSlot(i);
                                     if (!stack.isEmpty()) {
                                         LazyOptional<IFluidHandlerItem> fluidHandlerItem = stack
-                                                .getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM);
+                                                .getCapability(CapabilityFluidHandler.FLUID_HANDLER_ITEM_CAPABILITY);
 
                                         if (fluidHandlerItem.isPresent()) {
                                             if (blacklist.contains(stack.getItem()))
@@ -152,31 +143,31 @@ public class HotOrNot {
         }
     }
 
-    public void applyEffectAndDamageMitts(Player player, FluidEffect effect, TickEvent.LevelTickEvent event) {
+    public void applyEffectAndDamageMitts(Player player, FluidEffect effect, TickEvent.WorldTickEvent event) {
         ItemStack offHand = player.getOffhandItem();
         if (offHand.getItem().equals(MITTS.get()) || mittsItemList.contains(offHand.getItem())) {
             offHand.hurtAndBreak(1, player, consumer -> {
             });
-        } else if (event.level.getGameTime() % 20 == 0) {
+        } else if (event.world.getGameTime() % 20 == 0) {
             effect.interactPlayer.accept(player);
         }
     }
 
     public enum FluidEffect {
-        HOT(fluidStack -> fluidStack.getFluid().getFluidType()
+        HOT(fluidStack -> fluidStack.getFluid().getAttributes()
                 .getTemperature(fluidStack) >= HotOrNotConfig.COMMON.HOT_TEMPERATURE.get(),
                 entityPlayerMP -> entityPlayerMP.setSecondsOnFire(1),
-                Component.translatable(TOOLTIP_TOO_HOT).withStyle(ChatFormatting.RED)),
-        COLD(fluidStack -> fluidStack.getFluid().getFluidType()
+                new TranslatableComponent(TOOLTIP_TOO_HOT).withStyle(ChatFormatting.RED)),
+        COLD(fluidStack -> fluidStack.getFluid().getAttributes()
                 .getTemperature(fluidStack) <= HotOrNotConfig.COMMON.COLD_TEMPERATURE.get(), entityPlayerMP -> {
             entityPlayerMP.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 21, 1));
             entityPlayerMP.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 21, 1));
-        }, Component.translatable(TOOLTIP_TOO_COLD).withStyle(ChatFormatting.AQUA)),
+        }, new TranslatableComponent(TOOLTIP_TOO_COLD).withStyle(ChatFormatting.AQUA)),
 
-        GAS(fluidStack -> fluidStack.getFluid().is(Tags.Fluids.GASEOUS)
+        GAS(fluidStack -> fluidStack.getFluid().getAttributes().isGaseous(fluidStack)
                 && HotOrNotConfig.COMMON.GASEOUS.get(),
                 entityPlayerMP -> entityPlayerMP.addEffect(new MobEffectInstance(MobEffects.LEVITATION, 21, 1)),
-                Component.translatable(TOOLTIP_TOO_LIGHT).withStyle(ChatFormatting.YELLOW));
+                new TranslatableComponent(TOOLTIP_TOO_LIGHT).withStyle(ChatFormatting.YELLOW));
 
         private final Predicate<FluidStack> isValid;
         private final Consumer<Player> interactPlayer;
@@ -196,13 +187,13 @@ public class HotOrNot {
         ItemStack stack = event.getItemStack();
         if (HotOrNotConfig.COMMON.TOOLTIP.get() && !stack.isEmpty()) {
             if (stack.getItem() == HotOrNot.MITTS.get() || mittsItemList.contains(stack.getItem())) {
-                event.getToolTip().add(Component.translatable(TOOLTIP_MITTS).withStyle(ChatFormatting.GREEN));
+                event.getToolTip().add(new TranslatableComponent(TOOLTIP_MITTS).withStyle(ChatFormatting.GREEN));
             }
             if (blacklist.contains(stack.getItem()))
                 return;
-            if (stack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).isPresent()) {
+            if (stack.getCapability(CapabilityFluidHandler.FLUID_HANDLER_ITEM_CAPABILITY).isPresent()) {
                 LazyOptional<IFluidHandlerItem> iFluidHandler = stack
-                        .getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM);
+                        .getCapability(CapabilityFluidHandler.FLUID_HANDLER_ITEM_CAPABILITY);
                 iFluidHandler.ifPresent(h -> {
                     FluidStack fluidStack = h.drain(1000, IFluidHandler.FluidAction.SIMULATE);
                     if (fluidStack != FluidStack.EMPTY) {

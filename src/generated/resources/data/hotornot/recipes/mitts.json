@@ -1,16 +1,11 @@
 {
   "type": "minecraft:crafting_shaped",
-  "pattern": [
-    " w ",
-    "wlw",
-    "iw "
-  ],
   "key": {
-    "l": {
-      "tag": "forge:leather"
-    },
     "i": {
       "tag": "forge:ingots/iron"
+    },
+    "l": {
+      "tag": "forge:leather"
     },
     "w": [
       {
@@ -63,6 +58,11 @@
       }
     ]
   },
+  "pattern": [
+    " w ",
+    "wlw",
+    "iw "
+  ],
   "result": {
     "item": "hotornot:mitts"
   }
